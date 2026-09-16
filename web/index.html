@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Recall — Alexa+ simulator</title>
+<style>
+  :root { --bg:#0b1020; --fg:#e8ecf7; --accent:#00b8d4; --muted:#8a93ab; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:16px/1.5 system-ui,sans-serif; background:var(--bg); color:var(--fg);
+         display:flex; min-height:100vh; align-items:center; justify-content:center; padding:16px; }
+  .card { width:100%; max-width:560px; background:#131a2e; border:1px solid #1f2942;
+          border-radius:16px; padding:24px; }
+  h1 { margin:0 0 4px; font-size:20px; }
+  .sub { color:var(--muted); margin:0 0 20px; font-size:14px; }
+  textarea { width:100%; height:90px; background:#0b1020; color:var(--fg); border:1px solid #24304f;
+             border-radius:10px; padding:10px; resize:vertical; }
+  input { width:100%; background:#0b1020; color:var(--fg); border:1px solid #24304f;
+          border-radius:10px; padding:10px; margin-top:8px; }
+  button { background:var(--accent); color:#02121a; border:0; border-radius:10px; padding:10px 16px;
+           font-weight:600; cursor:pointer; margin-top:10px; }
+  button.ghost { background:transparent; color:var(--accent); border:1px solid var(--accent); }
+  .row { display:flex; gap:8px; flex-wrap:wrap; }
+  .say { background:#0b1020; border:1px dashed #24304f; border-radius:10px; padding:14px;
+         margin-top:16px; min-height:52px; }
+  .mic { font-size:13px; color:var(--muted); margin-top:8px; }
+  .live { color:var(--accent); }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>Recall</h1>
+    <p class="sub">Alexa+ experience simulator · speaks over MCP core</p>
+
+    <textarea id="src" placeholder="Paste notes, docs, or a paragraph to learn…"></textarea>
+    <input id="topic" placeholder="Topic (e.g. kubernetes)" />
+    <div class="row">
+      <button onclick="addSource()">Learn this</button>
+      <button class="ghost" onclick="quiz()">Quiz me 🎤</button>
+      <button class="ghost" onclick="prog()">How am I doing?</button>
+    </div>
+
+    <div class="say" id="say">Say “Learn this”, then “Quiz me”. Answer out loud.</div>
+    <div class="mic" id="mic"></div>
+  </div>
+
+<script>
+const $ = id => document.getElementById(id);
+let currentCard = null;
+
+function speak(text){
+  $('say').textContent = text;
+  if (window.speechSynthesis){
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'en-US';
+    speechSynthesis.cancel(); speechSynthesis.speak(u);
+  }
+}
+async function post(path, body){
+  const r = await fetch(path, {method:'POST', headers:{'Content-Type':'application/json'},
+                              body: JSON.stringify(body||{})});
+  return r.json();
+}
+async function addSource(){
+  const text = $('src').value.trim();
+  if(!text){ speak('Give me something to learn first.'); return; }
+  speak('Thinking…');
+  const out = await post('/api/add', {text, topic: $('topic').value.trim() || 'general'});
+  speak(out.say);
+}
+async function quiz(){
+  const out = await post('/api/next', {});
+  if(out.done){ speak(out.say); return; }
+  currentCard = out.card_id;
+  speak(out.say);
+  listen();
+}
+function listen(){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR){ $('mic').innerHTML = 'No speech recognition in this browser — type your answer and it still grades.'; return; }
+  const rec = new SR();
+  rec.lang='en-US'; rec.interimResults=false; rec.maxAlternatives=1;
+  $('mic').innerHTML = '<span class="live">● listening…</span>';
+  rec.onresult = async e => {
+    const answer = e.results[0][0].transcript;
+    $('mic').textContent = 'You said: ' + answer;
+    const out = await post('/api/grade', {card_id: currentCard, answer});
+    speak(out.say);
+  };
+  rec.onerror = () => { $('mic').textContent = 'Mic error — try again.'; };
+  rec.start();
+}
+async function prog(){ const out = await post('/api/progress', {}); speak(out.say); }
+</script>
+</body>
+</html>

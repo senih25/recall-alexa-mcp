@@ -48,8 +48,14 @@ a deterministic heuristic so it still runs locally.
 
 ```bash
 pip install -r requirements.txt
-python -m recall.server          # Streamable HTTP on http://127.0.0.1:8000/mcp
+python -m recall.server          # MCP: Streamable HTTP on http://127.0.0.1:8000/mcp
+python -m recall.webapp          # Alexa+ voice simulator on http://127.0.0.1:8080
 ```
+
+The MCP server is the Alexa+ track integration; the web app is the permitted
+Alexa+ **experience simulator** (browser Web Speech API). Both call the same
+`recall/core.py` logic. See [`docs/`](docs/) for the Alexa+ integration guide,
+demo script, friction log, and submission draft.
 
 Smoke test the transport:
 
