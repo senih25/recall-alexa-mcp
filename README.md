@@ -9,6 +9,10 @@
 Built for the **Build, Ship, Shape: Amazon Developer Hackathon** — Alexa+ track,
 with the **AWS Builder** and **Open Source** mini challenges.
 
+<p align="center">
+  <img src="docs/screenshot-ui.png" alt="Recall — Alexa+ voice coach UI" width="340" />
+</p>
+
 ## How it fits the tracks
 
 | Requirement | How Recall meets it |
@@ -19,6 +23,10 @@ with the **AWS Builder** and **Open Source** mini challenges.
 
 ## Architecture
 
+![Recall architecture](docs/architecture.svg)
+
+<details><summary>Text version</summary>
+
 ```
 Alexa+  ──MCP (Streamable HTTP)──►  recall.server (FastMCP)
                                        │
@@ -28,6 +36,8 @@ Alexa+  ──MCP (Streamable HTTP)──►  recall.server (FastMCP)
       Bedrock Converse:     next interval / easiness    per-user cards,
       make + grade cards      from recall grade          due tracking
 ```
+
+</details>
 
 The SM-2 scheduler is real logic, not an LLM wrapper: recall grades (0–5) drive
 the easiness factor and interval so hard cards resurface and mastered cards fade

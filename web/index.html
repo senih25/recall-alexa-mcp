@@ -3,94 +3,209 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Recall — Alexa+ simulator</title>
+<title>Recall — Alexa+ learning coach</title>
 <style>
-  :root { --bg:#0b1020; --fg:#e8ecf7; --accent:#00b8d4; --muted:#8a93ab; }
-  * { box-sizing:border-box; }
-  body { margin:0; font:16px/1.5 system-ui,sans-serif; background:var(--bg); color:var(--fg);
-         display:flex; min-height:100vh; align-items:center; justify-content:center; padding:16px; }
-  .card { width:100%; max-width:560px; background:#131a2e; border:1px solid #1f2942;
-          border-radius:16px; padding:24px; }
-  h1 { margin:0 0 4px; font-size:20px; }
-  .sub { color:var(--muted); margin:0 0 20px; font-size:14px; }
-  textarea { width:100%; height:90px; background:#0b1020; color:var(--fg); border:1px solid #24304f;
-             border-radius:10px; padding:10px; resize:vertical; }
-  input { width:100%; background:#0b1020; color:var(--fg); border:1px solid #24304f;
-          border-radius:10px; padding:10px; margin-top:8px; }
-  button { background:var(--accent); color:#02121a; border:0; border-radius:10px; padding:10px 16px;
-           font-weight:600; cursor:pointer; margin-top:10px; }
-  button.ghost { background:transparent; color:var(--accent); border:1px solid var(--accent); }
-  .row { display:flex; gap:8px; flex-wrap:wrap; }
-  .say { background:#0b1020; border:1px dashed #24304f; border-radius:10px; padding:14px;
-         margin-top:16px; min-height:52px; }
-  .mic { font-size:13px; color:var(--muted); margin-top:8px; }
-  .live { color:var(--accent); }
+  :root {
+    --bg: #f6f8fc; --surface: #ffffff; --surface-2: #eef2f9;
+    --ink: #0e1526; --muted: #5b6478; --line: #e2e8f4;
+    --brand: #4f46e5; --brand-2: #06b6d4; --accent: #0ea5a4;
+    --good: #16a34a; --warn: #d97706; --bad: #dc2626;
+    --ring: rgba(79,70,229,.35);
+    --shadow: 0 10px 30px rgba(20,30,60,.08), 0 2px 8px rgba(20,30,60,.05);
+    --radius: 18px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0a0e1a; --surface: #121829; --surface-2: #0e1424;
+      --ink: #e9edf7; --muted: #94a0ba; --line: #1e2740;
+      --brand: #7c74ff; --brand-2: #22d3ee; --accent: #2dd4bf;
+      --ring: rgba(124,116,255,.4);
+      --shadow: 0 12px 40px rgba(0,0,0,.45);
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; background:
+      radial-gradient(1200px 600px at 80% -10%, color-mix(in srgb, var(--brand) 12%, transparent), transparent),
+      radial-gradient(900px 500px at -10% 110%, color-mix(in srgb, var(--brand-2) 12%, transparent), transparent),
+      var(--bg);
+    color: var(--ink);
+    font: 15px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    display: flex; align-items: center; justify-content: center; padding: 24px;
+  }
+  .app { width: 100%; max-width: 460px; }
+  .brand { display: flex; align-items: center; gap: 10px; margin: 0 0 4px; }
+  .logo { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center;
+          background: linear-gradient(135deg, var(--brand), var(--brand-2)); color: #fff;
+          font-weight: 800; box-shadow: var(--shadow); }
+  .brand h1 { font-size: 19px; margin: 0; letter-spacing: -.02em; }
+  .tag { color: var(--muted); font-size: 12.5px; margin: 0 0 18px; }
+  .tag b { color: var(--accent); font-weight: 600; }
+
+  .panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+           box-shadow: var(--shadow); padding: 20px; }
+
+  .stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-bottom: 16px; }
+  .stat { background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px;
+          padding: 10px; text-align: center; }
+  .stat .n { font-size: 20px; font-weight: 700; letter-spacing: -.02em; }
+  .stat .l { font-size: 10.5px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+
+  .orb-wrap { display: grid; place-items: center; padding: 10px 0 4px; }
+  .orb { --s: 96px; width: var(--s); height: var(--s); border-radius: 50%; border: 0; cursor: pointer;
+         background: radial-gradient(circle at 35% 30%, #fff2, transparent 60%),
+                     linear-gradient(135deg, var(--brand), var(--brand-2));
+         color: #fff; display: grid; place-items: center; box-shadow: var(--shadow);
+         transition: transform .18s ease, box-shadow .18s ease; position: relative; }
+  .orb:hover { transform: translateY(-1px) scale(1.02); }
+  .orb:active { transform: scale(.97); }
+  .orb svg { width: 34px; height: 34px; }
+  .orb.listening::after, .orb.listening::before {
+    content: ""; position: absolute; inset: -6px; border-radius: 50%;
+    border: 2px solid var(--ring); animation: pulse 1.6s ease-out infinite; }
+  .orb.listening::before { animation-delay: .8s; }
+  @keyframes pulse { 0% { transform: scale(1); opacity: .8; } 100% { transform: scale(1.6); opacity: 0; } }
+  .orb.thinking { animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .hint { text-align: center; color: var(--muted); font-size: 12.5px; margin: 8px 0 2px; }
+
+  .say { background: var(--surface-2); border: 1px solid var(--line); border-radius: 14px;
+         padding: 14px 16px; margin: 14px 0 4px; min-height: 64px; font-size: 15px;
+         display: flex; align-items: center; gap: 10px; transition: border-color .2s; }
+  .say.speaking { border-color: var(--accent); }
+  .say .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex: none;
+              opacity: 0; }
+  .say.speaking .dot { opacity: 1; animation: blink 1s ease-in-out infinite; }
+  @keyframes blink { 50% { opacity: .3; } }
+  .transcript { color: var(--muted); font-size: 12.5px; min-height: 18px; margin-top: 6px; }
+  .transcript b { color: var(--ink); font-weight: 600; }
+
+  details { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 12px; }
+  summary { cursor: pointer; color: var(--muted); font-size: 12.5px; list-style: none; }
+  summary::-webkit-details-marker { display: none; }
+  summary::before { content: "＋ "; color: var(--brand); font-weight: 700; }
+  details[open] summary::before { content: "－ "; }
+  textarea, input { width: 100%; background: var(--surface-2); color: var(--ink);
+    border: 1px solid var(--line); border-radius: 12px; padding: 11px 12px; font: inherit;
+    margin-top: 10px; resize: vertical; }
+  textarea:focus, input:focus { outline: 2px solid var(--ring); outline-offset: 1px; border-color: var(--brand); }
+  .btn { margin-top: 12px; width: 100%; background: linear-gradient(135deg, var(--brand), var(--brand-2));
+    color: #fff; border: 0; border-radius: 12px; padding: 11px 14px; font-weight: 650; cursor: pointer;
+    box-shadow: var(--shadow); transition: transform .12s; }
+  .btn:active { transform: scale(.99); }
+  .row { display: flex; gap: 8px; margin-top: 10px; }
+  .row .pill { flex: 1; background: transparent; border: 1px solid var(--line); color: var(--ink);
+    border-radius: 999px; padding: 8px; font-size: 13px; cursor: pointer; transition: border-color .15s, color .15s; }
+  .row .pill:hover { border-color: var(--brand); color: var(--brand); }
+  .foot { text-align: center; color: var(--muted); font-size: 11px; margin-top: 14px; }
+  .foot span { padding: 2px 8px; border: 1px solid var(--line); border-radius: 999px; margin: 0 2px;
+    display: inline-block; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 </style>
 </head>
 <body>
-  <div class="card">
-    <h1>Recall</h1>
-    <p class="sub">Alexa+ experience simulator · speaks over MCP core</p>
-
-    <textarea id="src" placeholder="Paste notes, docs, or a paragraph to learn…"></textarea>
-    <input id="topic" placeholder="Topic (e.g. kubernetes)" />
-    <div class="row">
-      <button onclick="addSource()">Learn this</button>
-      <button class="ghost" onclick="quiz()">Quiz me 🎤</button>
-      <button class="ghost" onclick="prog()">How am I doing?</button>
+  <main class="app">
+    <div class="brand">
+      <div class="logo" aria-hidden="true">R</div>
+      <h1>Recall</h1>
     </div>
+    <p class="tag">Hands-free spaced-repetition coach for <b>Alexa+</b> · MCP · Bedrock</p>
 
-    <div class="say" id="say">Say “Learn this”, then “Quiz me”. Answer out loud.</div>
-    <div class="mic" id="mic"></div>
-  </div>
+    <section class="panel" aria-label="Recall coach">
+      <div class="stats" id="stats" aria-live="polite">
+        <div class="stat"><div class="n" id="s-total">0</div><div class="l">Cards</div></div>
+        <div class="stat"><div class="n" id="s-learned">0</div><div class="l">Learned</div></div>
+        <div class="stat"><div class="n" id="s-due">0</div><div class="l">Due</div></div>
+      </div>
+
+      <div class="orb-wrap">
+        <button class="orb" id="orb" aria-label="Quiz me — start a hands-free review">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3Z" fill="currentColor"/>
+            <path d="M5 11a7 7 0 0 0 14 0M12 18v3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+      <p class="hint" id="hint">Tap to quiz me — answer out loud</p>
+
+      <div class="say" id="say"><span class="dot" aria-hidden="true"></span><span id="sayText">Add a source below, then tap the mic to start a review.</span></div>
+      <div class="transcript" id="transcript"></div>
+
+      <details>
+        <summary>Add something to learn</summary>
+        <textarea id="src" rows="3" placeholder="Paste notes, docs, or a paragraph…"></textarea>
+        <input id="topic" placeholder="Topic — e.g. kubernetes" />
+        <button class="btn" id="addBtn">Generate flashcards</button>
+        <div class="row">
+          <button class="pill" id="progBtn">How am I doing?</button>
+          <button class="pill" id="nextBtn">Next question</button>
+        </div>
+      </details>
+    </section>
+
+    <p class="foot">
+      <span>Alexa+</span><span>AWS Builder</span><span>Open Source</span>
+    </p>
+  </main>
 
 <script>
 const $ = id => document.getElementById(id);
 let currentCard = null;
 
-function speak(text){
-  $('say').textContent = text;
-  if (window.speechSynthesis){
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'en-US';
+function setState(cls){ const o=$('orb'); o.classList.remove('listening','thinking'); if(cls) o.classList.add(cls); }
+function say(text, speak=true){
+  $('sayText').textContent = text;
+  const box = $('say');
+  if (speak && window.speechSynthesis){
+    const u = new SpeechSynthesisUtterance(text); u.lang='en-US';
+    box.classList.add('speaking');
+    u.onend = () => box.classList.remove('speaking');
     speechSynthesis.cancel(); speechSynthesis.speak(u);
   }
 }
 async function post(path, body){
-  const r = await fetch(path, {method:'POST', headers:{'Content-Type':'application/json'},
-                              body: JSON.stringify(body||{})});
+  const r = await fetch(path, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body||{})});
   return r.json();
 }
+async function refreshStats(){
+  try { const p = await post('/api/progress', {});
+    $('s-total').textContent=p.total; $('s-learned').textContent=p.learned; $('s-due').textContent=p.due;
+  } catch(e){}
+}
 async function addSource(){
-  const text = $('src').value.trim();
-  if(!text){ speak('Give me something to learn first.'); return; }
-  speak('Thinking…');
+  const text=$('src').value.trim(); if(!text){ say('Give me something to learn first.'); return; }
+  setState('thinking'); say('Generating cards…', false);
   const out = await post('/api/add', {text, topic: $('topic').value.trim() || 'general'});
-  speak(out.say);
+  setState(''); say(out.say); $('src').value=''; refreshStats();
 }
 async function quiz(){
-  const out = await post('/api/next', {});
-  if(out.done){ speak(out.say); return; }
-  currentCard = out.card_id;
-  speak(out.say);
-  listen();
+  setState('thinking'); const out = await post('/api/next', {});
+  if(out.done){ setState(''); say(out.say); return; }
+  currentCard = out.card_id; setState(''); say(out.say); listen();
 }
 function listen(){
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if(!SR){ $('mic').innerHTML = 'No speech recognition in this browser — type your answer and it still grades.'; return; }
-  const rec = new SR();
-  rec.lang='en-US'; rec.interimResults=false; rec.maxAlternatives=1;
-  $('mic').innerHTML = '<span class="live">● listening…</span>';
+  if(!SR){ $('transcript').innerHTML='Speech recognition unavailable — type an answer in the panel.'; return; }
+  const rec = new SR(); rec.lang='en-US'; rec.interimResults=false; rec.maxAlternatives=1;
+  setState('listening'); $('hint').textContent='Listening… speak your answer';
   rec.onresult = async e => {
     const answer = e.results[0][0].transcript;
-    $('mic').textContent = 'You said: ' + answer;
+    $('transcript').innerHTML = 'You said: <b>'+answer+'</b>';
+    setState('thinking');
     const out = await post('/api/grade', {card_id: currentCard, answer});
-    speak(out.say);
+    setState(''); $('hint').textContent='Tap to quiz me — answer out loud';
+    say(out.say); refreshStats();
   };
-  rec.onerror = () => { $('mic').textContent = 'Mic error — try again.'; };
+  rec.onerror = () => { setState(''); $('hint').textContent='Mic error — tap to retry'; };
+  rec.onend = () => setState('');
   rec.start();
 }
-async function prog(){ const out = await post('/api/progress', {}); speak(out.say); }
+$('orb').onclick = quiz;
+$('addBtn').onclick = addSource;
+$('nextBtn').onclick = quiz;
+$('progBtn').onclick = async () => { const p = await post('/api/progress', {}); say(p.say); };
+refreshStats();
 </script>
 </body>
 </html>
