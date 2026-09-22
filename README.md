@@ -1,5 +1,7 @@
 # Recall — a hands-free spaced-repetition learning coach for Alexa+
 
+> **Merged:** Recall now lives in **[senih25/hermx-proofgate-amazon-2026](https://github.com/senih25/hermx-proofgate-amazon-2026)** as *HERMX ProofGate: Recall*, the single submission for the Build, Ship, Shape hackathon. Live demo: https://hermx-proofgate-recall.senih-bayankulu25.workers.dev. This repository is the earlier prototype and is no longer updated.
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 > Turn what you read into voice-quizzed mastery. Feed Recall your notes, docs,
